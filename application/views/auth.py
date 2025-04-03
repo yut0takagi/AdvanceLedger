@@ -3,7 +3,7 @@ import pyrebase
 from datetime import datetime
 from application.forms import LoginForm, SignupForm
 from application.extensions import firestore_db
-from utils import generate_id
+from utils import generate_id, get_user_doc_id_by_email
 import json
 
 with open('application/config/firebaseConfig.json') as f:
@@ -16,6 +16,7 @@ firebase_auth = firebase.auth()
 #^ auth/ 
 auth_bp = Blueprint("auth", __name__, url_prefix="/auth")
 
+#^ ログイン画面(auth/login)
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
     """
@@ -39,16 +40,19 @@ def login():
             """firebaseへの認証を送信"""
             user = firebase_auth.sign_in_with_email_and_password(email, password)
             #~ デバック print(user)
+            docID = get_user_doc_id_by_email(email)
             session['user'] = {
+                'docID': docID,
                 'email': user['email'],
                 'idToken': user['idToken'],
                 'refreshToken': user['refreshToken'],
             }
             print("ログイン成功しました！")
-            return redirect(url_for(f"dashboard.dashboard"))
+            return redirect(url_for(f"dashboard.dashboard", user_id=docID))
         except Exception as e:
             error_message = str(e)
             print(f"ログインに失敗しました: {error_message}")
+            
             return redirect(url_for('auth.login'))
     else:
         """GETリクエストの場合の処理"""
@@ -78,7 +82,8 @@ def signup():
             user=  firestore_db.collection("users").add({
                         "username": request.form['name'],
                         "email": email,
-                        "joining":[],
+                        "friends":[], #~ 友達のdocID
+                        "joining":[], #~ 所属GroupのdocID
                         "created_at": created_at,
                     })
             return redirect(url_for('auth.login'))
@@ -90,7 +95,7 @@ def signup():
     """utils.make_dictを参照"""
     return render_template('signup.html', form=form)
 
-
+#^ ログアウト処理
 @auth_bp.route("/logout")
 def logout():
     session.pop("logged_in", None)
