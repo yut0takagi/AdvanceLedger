@@ -1,7 +1,8 @@
 from flask import Flask
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, SubmitField, BooleanField
-from wtforms.validators import DataRequired, Length, Email, EqualTo, ValidationError
+from wtforms import StringField, PasswordField, SubmitField, BooleanField, TextAreaField, SelectField, IntegerField, DecimalField, SelectMultipleField
+from wtforms.widgets import ListWidget, CheckboxInput
+from wtforms.validators import DataRequired, Length, Email, EqualTo, ValidationError, NumberRange
 
 from application.extensions import firestore_db
 
@@ -31,19 +32,27 @@ class SignupForm(FlaskForm):
         if len(results)>0:
             raise ValidationError('That email is already in use. Please choose a different one.')
 
-class add_group_form_in_dashboard(FlaskForm):
-    """
-    group_name: 友達の名前
-    submit: 追加ボタン
-    """
-    group_name = StringField('Group Name', validators=[DataRequired()])
-    submit = SubmitField('Add Group')
 
-class add_friend_form_in_dashboard(FlaskForm):
-    """
-    friend_name: 友達の名前
-    submit: 追加ボタン
-    """
-    friend_email = StringField('Friend Email', validators=[DataRequired()])
-    submit = SubmitField('Add Friend')
-
+class CreateGroupForm(FlaskForm):
+    group_name = StringField(
+        'グループ名',
+        validators=[DataRequired(message="グループ名は必須です"), Length(max=50)]
+    )
+    
+    member_names = TextAreaField(
+        'メンバー名（1行に1人ずつ）',
+        validators=[DataRequired(message="メンバー名を入力してください")]
+    )
+    
+    submit = SubmitField('グループを作成')
+    
+class PaymentForm(FlaskForm):
+    payer = SelectField("支払者", validators=[DataRequired()])
+    amount = DecimalField("金額", validators=[DataRequired(), NumberRange(min=1)])
+    memo = StringField("メモ")
+    payees = SelectMultipleField(
+        "支払い対象者",
+        option_widget=CheckboxInput(),
+        widget=ListWidget(prefix_label=False),
+        coerce=str  # user_idなど文字列で受け取る場合
+    )

@@ -1,0 +1,150 @@
+{% extends 'layout/layout1.html' %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto px-4 py-8">
+
+    <!-- グループ作成フォーム -->
+    <div class="bg-white rounded-lg shadow-md p-6">
+        <h2 class="text-2xl font-bold text-gray-800 mb-4">新しいグループを作成</h2>
+        <form method="POST" action="{{ url_for('group.create_group') }}">
+            {{ form.hidden_tag() }}
+            
+            <div class="mb-4">
+                <label for="group_name" class="block text-sm font-medium text-gray-700">グループ名</label>
+                {{ form.group_name(class="w-full border px-4 py-2 rounded", id="group_name") }}
+            </div>
+            
+            <div id="member-fields" class="space-y-2">
+                <!-- 最初の入力欄 -->
+                <div class="flex items-center space-x-2">
+                    <input type="text" name="member_names" placeholder="メンバー名を入力" class="w-full border px-4 py-2 rounded" />
+                    <button type="button" class="delete-btn text-red-500 hover:text-red-700">✕</button>
+                </div>
+            </div>
+            <!-- 自分の名前を選ぶ（メンバー入力欄から動的に候補が入る） -->
+            <div class="mb-4">
+                <label for="self-name" class="block text-sm font-medium text-gray-700">自分の名前を選択</label>
+                <select name="self_name" id="self-name" class="w-full border px-4 py-2 rounded">
+                    <option value="">-- 選択してください --</option>
+                </select>
+            </div>
+            <!-- メンバー追加ボタン -->
+            <button type="button" id="add-member-btn"
+                class="mt-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-500">
+                メンバーを追加
+            </button>
+            <!-- グループ追加ボタン -->
+            <button type="submit"
+                id="submit-btn"
+                class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-500 transition">
+                グループ作成
+            </button>
+        </form>
+    </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const container = document.getElementById("member-fields");
+    const addBtn = document.getElementById("add-member-btn");
+    const submitBtn = document.getElementById("submit-btn");
+    const selfSelect = document.getElementById("self-name");
+
+    // 自分の名前を選ぶセレクトの更新
+    function updateSelfSelectOptions() {
+        const inputs = container.querySelectorAll("input[name='member_names']");
+        const currentValue = selfSelect.value;
+
+        // 一度リセット
+        selfSelect.innerHTML = '<option value="">-- 選択してください --</option>';
+
+        inputs.forEach(input => {
+            const val = input.value.trim();
+            if (val !== "") {
+                const opt = document.createElement("option");
+                opt.value = val;
+                opt.textContent = val;
+                if (val === currentValue) opt.selected = true;
+                selfSelect.appendChild(opt);
+            }
+        });
+    }
+
+    // メンバー欄追加関数
+    function addMemberField() {
+        const wrapper = document.createElement("div");
+        wrapper.className = "flex items-center space-x-2";
+
+        const input = document.createElement("input");
+        input.type = "text";
+        input.name = "member_names";
+        input.placeholder = "メンバー名を入力";
+        input.className = "w-full border px-4 py-2 rounded";
+
+        const delBtn = document.createElement("button");
+        delBtn.type = "button";
+        delBtn.textContent = "✕";
+        delBtn.className = "delete-btn text-red-500 hover:text-red-700";
+
+        delBtn.addEventListener("click", function () {
+            wrapper.remove();
+            updateSelfSelectOptions();
+        });
+
+        input.addEventListener("input", updateSelfSelectOptions);
+
+        wrapper.appendChild(input);
+        wrapper.appendChild(delBtn);
+        container.appendChild(wrapper);
+        input.focus();
+    }
+
+    // 最初の削除ボタンに機能をつける & セレクト更新
+    document.querySelectorAll(".delete-btn").forEach(btn => {
+        btn.addEventListener("click", function () {
+            btn.parentElement.remove();
+            updateSelfSelectOptions();
+        });
+    });
+
+    // 入力時にセレクト更新
+    container.addEventListener("input", updateSelfSelectOptions);
+
+    // 追加ボタン押下時
+    addBtn.addEventListener("click", function () {
+        addMemberField();
+    });
+
+    // Enterキーで入力欄追加（IME中は除外）
+    container.addEventListener("keydown", function (e) {
+        if (e.key === "Enter" && !e.isComposing) {
+            e.preventDefault();
+            addMemberField();
+            updateSelfSelectOptions();
+        }
+    });
+
+    // バリデーション：自分 + 他1名以上
+    submitBtn.closest("form").addEventListener("submit", function (e) {
+        const inputs = container.querySelectorAll("input[name='member_names']");
+        const selfName = selfSelect.value.trim();
+
+        let count = 0;
+        inputs.forEach(input => {
+            if (input.value.trim() !== "") count++;
+        });
+
+        if (!selfName) {
+            e.preventDefault();
+            alert("自分の名前を選択してください。");
+            return;
+        }
+
+        if (count < 2) {
+            e.preventDefault();
+            alert("自分以外に少なくとも1人のメンバーを入力してください。");
+        }
+    });
+});
+    </script>
+{% endblock %}

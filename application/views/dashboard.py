@@ -1,7 +1,6 @@
 from flask import Flask, redirect, url_for, session, request, Blueprint, flash, render_template
 import pyrebase
 from datetime import datetime
-from application.forms import add_group_form_in_dashboard, add_friend_form_in_dashboard
 from application.extensions import firestore_db, login_required
 from utils import generate_id
 import json
@@ -9,7 +8,7 @@ import json
 dashboard_bp = Blueprint("dashboard", __name__, url_prefix="/dashboard")
 
 
-@dashboard_bp.route('/<user_id>', methods=['GET', 'POST'])
+@dashboard_bp.route('/<user_id>', methods=['GET'])
 @login_required
 def dashboard(user_id):
     #^ ログインしているユーザーのみアクセス可能とする
@@ -24,31 +23,34 @@ def dashboard(user_id):
         - グループ情報を取得
         - 友達情報を取得
     """
-    #^ ログイン状態の確認
-    user = session.get('user')
-    if not user:
+    doc = firestore_db.collection('users').document(user_id).get().to_dict()
+    print("#DEBUG: doc: ", doc)
+
+    if doc is None:
         return redirect(url_for('auth.login'))
     else:
-        doc_ref = firestore_db.collection('users').document(user_id)
-        doc = doc_ref.get().to_dict()
-        
+        #^ groupsのリストを定義
+        groups=[]
+        for group_docID in doc["joining"]:
+            groups_ref = firestore_db.collection('groups').document(group_docID)
+            group_doc = groups_ref.get().to_dict()
+            groups.append(
+                {
+                    "name": group_doc['groupname'],
+                    "docID": group_docID,
+                }
+            )
         #^ friendsのリストを定義
         friends = []
-        if doc is None:
-            return redirect(url_for('auth.login'))
-        else:
-            for friend_docID in doc["friends"]:
-                users_ref = firestore_db.collection('users').document(friend_docID)
-                friend_doc = users_ref.get().to_dict()
-                friends.append(
-                    {
-                        "name": friend_doc['username'],
-                        "user_id": friend_docID,
-                    }
-                )
-        #^ debug
-        print("debugFRIEND:",friends)
-        groups=[{"name": "旅行グループ","docID":"1"}, {"name": "飲み会メンバー", "docID":"bbbb"}]
-        return render_template("dashboard.html", friends=friends, groups=groups)
+        for friend_docID in doc["friends"]:
+            users_ref = firestore_db.collection('users').document(friend_docID)
+            friend_doc = users_ref.get().to_dict()
+            friends.append(
+                {
+                    "name": friend_doc['username'],
+                    "user_id": friend_docID,
+                }
+            )
+        return render_template("dashboard.html", friends=friends, groups=groups, user_id=user_id)
 
 

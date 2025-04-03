@@ -20,7 +20,7 @@
             <p class="text-gray-400">まだグループに参加していません。</p>
         {% endif %}
 
-        <a href="{{ url_for('travel.create_group') }}"
+        <a href="{{ url_for('group.create_group') }}"
         class="mt-6 inline-block bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-500 transition">
         グループを作成
         </a>
@@ -32,32 +32,28 @@
         {% if friends %}
         <ul class="space-y-4">
             {% for friend in friends %}
-            <li class="flex items-center justify-between bg-gray-50 p-4 rounded-lg shadow-sm">
-                <div class="flex items-center space-x-4">
-                    <!-- アイコン -->
-                    <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold">
-                        {{ friend.name[:1] | upper }}
+            <a href="{{ url_for('friend.friend_detail', user_id=friend.user_id) }}">
+                
+                <li class="flex items-center hover:bg-blue-100 justify-between bg-gray-50 p-4 rounded-lg shadow-sm transition duration-200">
+                    <div class="flex items-center space-x-4">
+                        <!-- アイコン -->
+                        <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold">
+                            {{ friend.name[:1] | upper }}
+                        </div>
+                        <!-- ユーザー情報 -->
+                        <div class="text-gray-800">
+                            <p class="font-semibold">{{ friend.name }}</p>
+                            <p class="text-sm text-gray-500">ID: {{ friend.user_id }}</p>
+                        </div>
                     </div>
-                    <!-- ユーザー情報 -->
-                    <div class="text-gray-800">
-                        <p class="font-semibold">{{ friend.name }}</p>
-                        <p class="text-sm text-gray-500">ID: {{ friend.user_id }}</p>
-                        <p class="text-sm text-gray-500">📧 {{ friend.email }}</p>
-                    </div>
-                </div>
-                <!-- 登録状況 -->
-                {% if friend.is_registered %}
-                    <span class="text-green-600 text-xl">✔</span>
-                {% else %}
-                    <span class="text-gray-400 text-xl">✖</span>
-                {% endif %}
-            </li>
+                </li>
+            </a>
             {% endfor %}
         </ul>
         {% else %}
         <p class="text-gray-400">まだ友達が追加されていません。</p>
         {% endif %}
-        <a href="{{ url_for('travel.add_friend') }}" class="mt-4 inline-block bg-green-600 text-white px-4 py-2 rounded hover:bg-green-500 transition">友達を追加</a>
+        <a href="{{ url_for('friend.add_friend', user_id=user_id) }}" class="mt-4 inline-block bg-green-600 text-white px-4 py-2 rounded hover:bg-green-500 transition">友達を追加</a>
     </div>
 
     <!-- 精算状況表示 -->

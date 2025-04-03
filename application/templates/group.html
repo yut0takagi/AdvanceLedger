@@ -16,24 +16,35 @@
         {% if members %}
         <ul class="space-y-4">
             {% for member in members %}
-            <li class="flex items-center justify-between bg-gray-50 p-4 rounded-lg shadow-sm">
-                <div class="flex items-center space-x-4">
-                    <!-- アイコン -->
-                    <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold">
-                        {{ member.name[:1] | upper }}
-                    </div>
-                    <!-- ユーザー情報 -->
-                    <div class="text-gray-800">
-                        <p class="font-semibold">{{ member.name }}</p>
-                        <p class="text-sm text-gray-500">ID: {{ member.user_id }}</p>
-                        <p class="text-sm text-gray-500">📧 {{ member.email }}</p>
-                    </div>
-                </div>
-                <!-- 登録状況 -->
-                {% if member.is_registered %}
-                    <span class="text-green-600 text-xl">✔</span>
+            <li class="bg-gray-50 p-4 rounded-lg shadow-sm hover:bg-blue-50 transition">
+                {% if member.user_id != "----" %}
+                <a href="{{ url_for('friend.friend_detail', user_id=member.user_id) }}" class="flex items-center justify-between text-inherit no-underline">
                 {% else %}
-                    <span class="text-gray-400 text-xl">✖</span>
+                <div class="flex items-center justify-between">
+                {% endif %}
+                    <div class="flex items-center space-x-4 text-left">
+                        <!-- アイコン -->
+                        <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold">
+                            {{ member.nickname[:1] | upper }}
+                        </div>
+                        <!-- ユーザー情報 -->
+                        <div class="text-gray-800 text-left">
+                            <p class="font-semibold">{{ member.nickname }}</p>
+                            <p class="text-sm text-gray-500 truncate w-64" title="{{ member.username }}">
+                                {{ member.username }}
+                            </p>
+                        </div>
+                    </div>
+                    <!-- 登録状況 -->
+                    {% if member.is_registered %}
+                        <span class="text-green-600 text-xl">✔</span>
+                    {% else %}
+                        <span class="text-gray-400 text-xl">✖</span>
+                    {% endif %}
+                {% if member.user_id != "----" %}
+                </a>
+                {% else %}
+                </div>
                 {% endif %}
             </li>
             {% endfor %}
@@ -42,31 +53,94 @@
         <p class="text-gray-400">このグループにはまだメンバーがいません。</p>
         {% endif %}
     </div>
+    <!-- 支払い（立て替え）追加フォーム -->
+    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+        <h3 class="text-xl font-semibold text-gray-700 mb-4">支払いを追加</h3>
+        <form method="POST" action="{{ url_for('group.group', group_id=group['docID']) }}">
+            {{ payment_form.hidden_tag() }}
 
-    <!-- 精算状況 -->
-    <div class="bg-white rounded-lg shadow-md p-6">
-        <h3 class="text-xl font-semibold text-gray-700 mb-4">精算状況</h3>
-        {% if balances %}
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700">支払者</label>
+                {{ payment_form.payer(class="w-full border px-4 py-2 rounded", required=True) }}
+            </div>
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">支払い対象者</label>
+                <div class="grid grid-cols-2 gap-2">
+                    {% for subfield in payment_form.payees %}
+                        <label class="flex items-center px-3 py-2 bg-gray-100 hover:bg-blue-100 rounded-lg cursor-pointer transition border border-gray-200">
+                            {{ subfield(class="form-checkbox text-blue-600 focus:ring-blue-500") }}
+                            <span class="ml-2 text-sm text-gray-800">{{ subfield.label.text }}</span>
+                        </label>
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700">金額</label>
+                {{ payment_form.amount(class="w-full border px-4 py-2 rounded", required=True, type="number", min="1") }}
+            </div>
+
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700">メモ（任意）</label>
+                {{ payment_form.memo(class="w-full border px-4 py-2 rounded") }}
+            </div>
+
+            <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-500 transition">追加</button>
+        </form>
+    </div>
+
+    <!-- ① 立て替え状況テーブル -->
+    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+        <h3 class="text-xl font-semibold text-gray-700 mb-4">立て替え記録</h3>
+        {% if raw_payments %}
         <table class="w-full text-left table-auto">
             <thead>
                 <tr class="border-b">
-                    <th class="py-2">名前</th>
-                    <th class="py-2">支払い</th>
-                    <th class="py-2">受取</th>
+                    <th class="py-2">支払者</th>
+                    <th class="py-2">対象者</th>
+                    <th class="py-2">金額</th>
+                    <th class="py-2">メモ</th>
                 </tr>
             </thead>
             <tbody>
-                {% for balance in balances %}
+                {% for record in raw_payments %}
                 <tr class="border-b">
-                    <td class="py-2">{{ balance.name }}</td>
-                    <td class="py-2 text-red-600">¥{{ balance.to_pay }}</td>
-                    <td class="py-2 text-green-600">¥{{ balance.to_receive }}</td>
+                    <td class="py-2">{{ record.payer }}</td>
+                    <td class="py-2">{{ record.payees | join(', ') }}</td>
+                    <td class="py-2 text-red-600">¥{{ record.amount }}</td>
+                    <td class="py-2 text-gray-500">{{ record.memo }}</td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
         {% else %}
-        <p class="text-gray-400">まだ精算情報がありません。</p>
+        <p class="text-gray-400">まだ立て替え記録がありません。</p>
+        {% endif %}
+    </div>
+
+    <!-- ② 最適化された支払いテーブル -->
+    <div class="bg-white rounded-lg shadow-md p-6">
+        <h3 class="text-xl font-semibold text-gray-700 mb-4">最適化結果</h3>
+        {% if optimized_transactions %}
+        <table class="w-full text-left table-auto">
+            <thead>
+                <tr class="border-b">
+                    <th class="py-2">支払元</th>
+                    <th class="py-2">受取先</th>
+                    <th class="py-2">金額</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for tx in optimized_transactions %}
+                <tr class="border-b">
+                    <td class="py-2">{{ tx.from }}</td>
+                    <td class="py-2">{{ tx.to }}</td>
+                    <td class="py-2 text-blue-600">¥{{ tx.amount }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p class="text-gray-400">まだ精算は必要ありません。</p>
         {% endif %}
     </div>
 </div>
