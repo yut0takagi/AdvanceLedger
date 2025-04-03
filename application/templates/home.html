@@ -1,0 +1,6 @@
+{% extends 'layout/layout1.html' %}
+{% block content %}
+    <h2 class="text-3xl font-extrabold text-gray-800 mb-4">友達同士の金銭やりとり、もう迷わない！</h2>
+    <p class="text-gray-600 mb-8">ペイとも は、友達同士の金銭やりとりを簡単に記録・精算できるアプリです。<br class="hidden md:inline">日常の建て替えも、友達との旅行も、スッキリお金を管理しましょう。</p>
+    <a href="{{ url_for('auth.login') }}" class="inline-block bg-blue-600 text-white px-6 py-3 rounded-lg text-lg hover:bg-blue-500 transition">はじめる</a>
+{% endblock %}
