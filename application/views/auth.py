@@ -3,8 +3,16 @@ import pyrebase
 from datetime import datetime
 from application.forms import LoginForm, SignupForm
 from application.models import User, db
-from application import firebase_auth
 from utils import generate_id
+import json
+
+with open('application/config/firebaseConfig.json') as f:
+    config = json.load(f)
+
+firebase = pyrebase.initialize_app(config)
+firebase_auth = firebase.auth()
+
+
 #^ auth/ 
 auth_bp = Blueprint("auth", __name__, url_prefix="/auth")
 

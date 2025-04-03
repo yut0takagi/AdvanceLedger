@@ -31,17 +31,12 @@ ENV/
 *.swp
 *.swo
 
-# Flask
-instance/
-.webassets-cache
 
-# Database
-*.db
-*.sqlite3
 
 # Firebase
 firebase-adminsdk-*.json
 firebaseConfig.json
+serviceAccountKey.json
 
 # Environment variables
 .env
