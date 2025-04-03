@@ -1,8 +1,9 @@
 from flask import Blueprint, request, render_template, redirect, url_for
-from application.models import Trip, Member, db
+from application.extensions import firestore_db
 from utils import generate_id
 import uuid
 from firebase_admin import storage
+from datetime import datetime
 
 travel_bp = Blueprint("travel", __name__, url_prefix="/travel")
 
@@ -44,3 +45,17 @@ def upload_receipt():
     file_url = blob.public_url
     # DBに保存するなど
     return {"url": file_url}
+
+@travel_bp.route("/add_friend", methods=["GET","POST"])
+def add_friend():
+    if request.method == "POST":
+        friend_name = request.form.get("friend_name")
+        # Firestoreに友達を追加する処理
+        firestore_db.collection('friends').add({
+            'name': friend_name,
+            'created_at': datetime.now()
+        })
+        return redirect(url_for('travel.add_friend'))
+
+    friends = firestore_db.collection('friends').get()
+    return render_template("add_friend.html", friends=friends)

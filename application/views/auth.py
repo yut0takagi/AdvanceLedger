@@ -2,7 +2,7 @@ from flask import Flask, redirect, url_for, session, request, Blueprint, flash, 
 import pyrebase
 from datetime import datetime
 from application.forms import LoginForm, SignupForm
-from application.models import User, db
+from application.extensions import firestore_db
 from utils import generate_id
 import json
 
@@ -33,33 +33,26 @@ def login():
     if request.method == 'POST':
         """ログイフォームを送信された時(POSTリクエスト)の処理"""
         print("POSTリクエスト")
-        user = User()
-        # データの格納
         try:
             email = request.form['email']
             password = request.form['password']
             """firebaseへの認証を送信"""
             user = firebase_auth.sign_in_with_email_and_password(email, password)
             #~ デバック print(user)
-            existing_user = User.query.filter_by(email=email).first()
-            
             session['user'] = {
                 'email': user['email'],
                 'idToken': user['idToken'],
                 'refreshToken': user['refreshToken'],
-                'user_type': existing_user.user_type
             }
-            print(existing_user.user_type)
             print("ログイン成功しました！")
-            return redirect(url_for(f"home.home"))
+            return redirect(url_for(f"dashboard.dashboard"))
         except Exception as e:
             error_message = str(e)
-            flash(f"ログインに失敗しました: {error_message}", "danger")
             print(f"ログインに失敗しました: {error_message}")
             return redirect(url_for('auth.login'))
     else:
         """GETリクエストの場合の処理"""
-        return render_template('login.html')
+        return render_template('login.html', form=form)
 
 #^ 新規登録画面(auth/signup)
 #~ 完成版のため、変更時注意
@@ -80,19 +73,22 @@ def signup():
         print("debug point:",email,password)
         try:
             firebase_auth.create_user_with_email_and_password(email, password)
-            name = request.form['name']
             created_at = datetime.now()
             print("debug point111")
-            user = User(id=generate_id(length=10, table=User), username=name, email=email, created_at=created_at)
-            db.session.add(user)
-            db.session.commit()
+            user=  firestore_db.collection("users").add({
+                        "username": request.form['name'],
+                        "email": email,
+                        "joining":[],
+                        "created_at": created_at,
+                    })
             return redirect(url_for('auth.login'))
-        except:
+        except Exception as e:
             #TODO: Error画面の作成
+            error_message = str(e)
+            print(f"ユーザー登録に失敗しました: {error_message}")
             return 'ユーザー登録に失敗しました'
-    #TODO: make_dictの引数については後日再確認
     """utils.make_dictを参照"""
-    return render_template('signup.html')
+    return render_template('signup.html', form=form)
 
 
 @auth_bp.route("/logout")

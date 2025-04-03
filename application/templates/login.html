@@ -9,7 +9,7 @@
       </p>
     </div>
     <form class="mt-8 space-y-6" method="POST" action="{{ url_for('auth.login') }}">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      {{ form.hidden_tag() }}
       <div class="rounded-md shadow-sm -space-y-px">
         <div class="mb-4">
           <label for="email" class="block text-sm font-medium text-gray-700">メールアドレス</label>
