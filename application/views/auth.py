@@ -12,9 +12,13 @@ with open('application/config/firebaseConfig.json') as f:
 firebase = pyrebase.initialize_app(config)
 firebase_auth = firebase.auth()
 
+#^--------------------------------------------------
+#^ 完成したコードのため、注意
+#^--------------------------------------------------
 
 #^ auth/ 
 auth_bp = Blueprint("auth", __name__, url_prefix="/auth")
+
 
 #^ ログイン画面(auth/login)
 @auth_bp.route('/login', methods=['GET', 'POST'])
@@ -32,14 +36,11 @@ def login():
     """
     form = LoginForm()
     if request.method == 'POST':
-        """ログイフォームを送信された時(POSTリクエスト)の処理"""
         print("POSTリクエスト")
         try:
             email = request.form['email']
             password = request.form['password']
-            """firebaseへの認証を送信"""
             user = firebase_auth.sign_in_with_email_and_password(email, password)
-            #~ デバック print(user)
             docID = get_user_doc_id_by_email(email)
             session['user'] = {
                 'docID': docID,
@@ -48,15 +49,16 @@ def login():
                 'refreshToken': user['refreshToken'],
             }
             print("ログイン成功しました！")
-            return redirect(url_for(f"dashboard.dashboard", user_id=docID))
+            next_url = session.pop("next_url", None)
+            return redirect(next_url or url_for("dashboard.dashboard", user_id=docID))
         except Exception as e:
             error_message = str(e)
             print(f"ログインに失敗しました: {error_message}")
-            
+            flash("ログインに失敗しました", "error")
             return redirect(url_for('auth.login'))
     else:
-        """GETリクエストの場合の処理"""
         return render_template('login.html', form=form)
+
 
 #^ 新規登録画面(auth/signup)
 #~ 完成版のため、変更時注意
@@ -95,9 +97,10 @@ def signup():
     """utils.make_dictを参照"""
     return render_template('signup.html', form=form)
 
-#^ ログアウト処理
-@auth_bp.route("/logout")
+#^ ログアウト管理
+@auth_bp.route('/logout')
 def logout():
-    session.pop("logged_in", None)
-    session["logged_in"] = False
-    return redirect(url_for("home.home"))
+    """ ログアウト処理 """
+    session.clear()  # セッションを全てクリア
+    flash("ログアウトしました", "info")
+    return redirect(url_for('auth.login'))  # ログインページにリダイレクト

@@ -1,0 +1,28 @@
+{% extends 'layout/layout1.html' %}
+
+{% block content %}
+<div class="max-w-lg mx-auto px-4 py-10">
+    <div class="bg-white rounded-xl shadow-md p-6">
+        <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">ニックネームの選択</h2>
+        <p class="text-gray-600 mb-4 text-center">参加する際のニックネームを選んでください。</p>
+
+        <form method="POST" action="{{ url_for('group.confirm_join', group_id=group_id) }}">
+            {{ form.hidden_tag() }}  {# CSRF トークンを含める #}
+
+            <div class="mb-6">
+                <label for="slot_doc_id" class="block text-sm font-medium text-gray-700 mb-2">ニックネームを選択</label>
+                <select name="slot_doc_id" id="slot_doc_id" required class="w-full border border-gray-300 px-4 py-2 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                    <option value="">-- 選択してください --</option>
+                    {% for slot in empty_slots %}
+                        <option value="{{ slot.doc_id }}">{{ slot.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <button type="submit" class="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-500 transition">
+                この名前で参加する
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}

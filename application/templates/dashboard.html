@@ -9,12 +9,17 @@
         {% if groups %}
             <div class="flex flex-col space-y-4">
                 {% for group in groups %}
-                    <a href="{{ url_for('group.group', group_id=group.docID) }}"
-                    class="bg-gray-100 hover:bg-blue-100 rounded-lg p-4 shadow-sm transition duration-200">
+                <div class="bg-gray-100 hover:bg-blue-100 rounded-lg p-4 shadow-sm transition duration-200 flex justify-between items-center">
+                    <a href="{{ url_for('group.group', group_id=group.docID) }}">
                         <div class="text-lg font-medium text-gray-800">{{ group.name }}</div>
                         <div class="text-sm text-gray-500">グループID: {{ group.docID }}</div>
                     </a>
-                {% endfor %}
+                    <form method="POST" action="{{ url_for('group.leave_group', group_id=group.docID) }}">
+                        {{ leave_form.hidden_tag() }}
+                        {{ leave_form.submit(class="text-sm text-red-500 hover:text-red-700 ml-4") }}
+                    </form>
+                </div>
+            {% endfor %}
             </div>
         {% else %}
             <p class="text-gray-400">まだグループに参加していません。</p>
@@ -53,30 +58,41 @@
         {% else %}
         <p class="text-gray-400">まだ友達が追加されていません。</p>
         {% endif %}
-        <a href="{{ url_for('friend.add_friend', user_id=user_id) }}" class="mt-4 inline-block bg-green-600 text-white px-4 py-2 rounded hover:bg-green-500 transition">友達を追加</a>
+        <a href="{{ url_for('friend.search_friend_page') }}" class="mt-4 inline-block bg-green-600 text-white px-4 py-2 rounded hover:bg-green-500 transition">友達を検索</a>
     </div>
 
     <!-- 精算状況表示 -->
     <div class="bg-white rounded-lg shadow-md p-6">
-        <h3 class="text-xl font-semibold text-gray-700 mb-4">精算状況</h3>
+        <h3 class="text-xl font-semibold text-gray-700 mb-4">精算予定</h3>
+        {% if visible_friends %}
         <table class="w-full text-left table-auto">
             <thead>
                 <tr class="border-b">
                     <th class="py-2">名前</th>
                     <th class="py-2">支払い</th>
                     <th class="py-2">受取</th>
+                    <th class="py-2">操作</th>
                 </tr>
             </thead>
             <tbody>
-                {% for friend in friends %}
+                {% for friend in visible_friends %}
                 <tr class="border-b">
                     <td class="py-2">{{ friend.name }}</td>
                     <td class="py-2 text-red-600">¥{{ friend.to_pay }}</td>
                     <td class="py-2 text-green-600">¥{{ friend.to_receive }}</td>
+                    <td class="py-2">
+                        <form method="POST" action="{{ url_for('dashboard.settle_with_friend', user_id=user_id, friend_id=friend.user_id) }}">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="text-sm text-blue-600 hover:underline">精算済みにする</button>
+                        </form>
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
+        {% else %}
+            <p class="text-gray-400">精算予定はありません。</p>
+        {% endif %}
     </div>
 </div>
 {% endblock %}

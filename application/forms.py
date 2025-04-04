@@ -1,6 +1,6 @@
 from flask import Flask
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, SubmitField, BooleanField, TextAreaField, SelectField, IntegerField, DecimalField, SelectMultipleField
+from wtforms import StringField, PasswordField, SubmitField, BooleanField, TextAreaField, SelectField, IntegerField, DecimalField, SelectMultipleField,HiddenField
 from wtforms.widgets import ListWidget, CheckboxInput
 from wtforms.validators import DataRequired, Length, Email, EqualTo, ValidationError, NumberRange
 
@@ -56,3 +56,24 @@ class PaymentForm(FlaskForm):
         widget=ListWidget(prefix_label=False),
         coerce=str  # user_idなど文字列で受け取る場合
     )
+    
+class DeletePaymentForm(FlaskForm):
+    doc_id = HiddenField(validators=[DataRequired()])
+    form_id = HiddenField(default="delete_form") 
+    submit = SubmitField('削除')
+    
+
+class LeaveGroupForm(FlaskForm):
+    submit = SubmitField("脱退")
+
+class ChooseNicknameForm(FlaskForm):
+    slot_doc_id = SelectField("ニックネーム", validators=[DataRequired()])
+    submit = SubmitField("参加")
+    
+class FollowForm(FlaskForm):
+    submit = SubmitField("フォロー / フォロー解除")
+    
+class DirectPaymentForm(FlaskForm):
+    amount = IntegerField("金額", validators=[DataRequired(), NumberRange(min=1)])
+    memo = StringField("メモ")
+    submit = SubmitField("記録する")

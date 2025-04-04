@@ -1,5 +1,7 @@
 # application/extensions.py
-
+#^--------------------------------------------------
+#^ 完成したコードのため、注意
+#^--------------------------------------------------
 import firebase_admin
 from firebase_admin import credentials, firestore, auth
 from functools import wraps
@@ -51,12 +53,12 @@ def or_tools_to_minimum_paying(
     
     # 各人のネット収支を計算
     balance = [0] * n
-    for payer, payee, amount in transactions:
+    for receiver, payer, amount in transactions:
         balance[idx[payer]] -= amount
-        balance[idx[payee]] += amount
+        balance[idx[receiver]] += amount
 
     model = cp_model.CpModel()
-    max_amount = sum(abs(b) for b in balance)
+    max_amount = int(sum(abs(b) for b in balance))
 
     x = {}
     used = {}
@@ -85,5 +87,25 @@ def or_tools_to_minimum_paying(
                 if i != j:
                     amount = solver.Value(x[i, j])
                     if amount > 0:
-                        result.append((people[i], people[j], amount))
+                        result.append({"from_":people[i], "to_":people[j],"amount": amount})
     return result
+
+def convert_raw_to_transactions(raw_payments):
+    """
+    
+    """
+    transactions = []
+    for payment in raw_payments:
+        payer = payment["payer"]
+        payees = payment["payees"]
+        total_amount = payment["amount"]
+        num_payees = len(payees)
+        if num_payees == 0:
+            continue  # 受取人がいない場合はスキップ
+        share = int(total_amount) // int(num_payees)  # 割り切れなかった分は捨てる（必要に応じて調整）
+
+        for payee in payees:
+            if payer==payee:
+                continue
+            transactions.append((payer, payee, share))
+    return transactions

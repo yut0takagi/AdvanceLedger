@@ -1,0 +1,54 @@
+{% extends 'layout/layout1.html' %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto px-4 py-8">
+    <div class="bg-white rounded-lg shadow-md p-6">
+        <h2 class="text-2xl font-bold text-gray-800 mb-4">友達を検索</h2>
+        <input
+            type="text"
+            id="search-input"
+            placeholder="ユーザーIDで検索"
+            class="w-full border px-4 py-2 rounded mb-4"
+        />
+
+        <ul id="results-list" class="space-y-4"></ul>
+    </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const input = document.getElementById("search-input");
+    const resultsList = document.getElementById("results-list");
+
+    input.addEventListener("input", function () {
+        const query = input.value.trim();
+        if (query === "") {
+            resultsList.innerHTML = "";
+            return;
+        }
+
+        fetch(`/friend/search_api?q=${encodeURIComponent(query)}`)
+            .then(response => response.json())
+            .then(data => {
+                resultsList.innerHTML = "";
+                data.results.forEach(user => {
+                    const li = document.createElement("li");
+                    li.className = "bg-gray-100 p-4 rounded shadow-sm";
+
+                    li.innerHTML = `
+                        <a href="/friend/detail/${user.id}" class="block hover:bg-blue-50 rounded p-2 transition">
+                            <div class="text-lg font-semibold text-gray-800 hover:text-blue-600">${user.username}</div>
+                            <div class="text-sm text-gray-600">${user.email}</div>
+                            <div class="text-sm text-gray-400">ユーザーID: ${user.id}</div>
+                        </a>
+                    `;
+                    resultsList.appendChild(li);
+                });
+            })
+            .catch(error => {
+                console.error("検索エラー:", error);
+            });
+    });
+});
+</script>
+{% endblock %}
