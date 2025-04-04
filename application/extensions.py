@@ -3,15 +3,20 @@
 #^ 完成したコードのため、注意
 #^--------------------------------------------------
 import firebase_admin
-from firebase_admin import credentials, firestore, auth
+import traceback
+import json
+import os
+from firebase_admin import credentials, firestore, auth, initialize_app
 from functools import wraps
 from ortools.sat.python import cp_model
 from typing import List, Tuple
 
 from flask import session, redirect, url_for, request
 
-cred = credentials.Certificate("application/config/serviceAccountKey.json")
-firebase_admin_app = firebase_admin.initialize_app(cred)
+
+service_account = json.loads(os.environ["FIREBASE_SERVICE_ACCOUNT"])
+cred = credentials.Certificate(service_account)
+firebase_admin.initialize_app(cred)
 
 # Firestore client
 firestore_db = firestore.client()
@@ -109,3 +114,19 @@ def convert_raw_to_transactions(raw_payments):
                 continue
             transactions.append((payer, payee, share))
     return transactions
+
+def log_error_to_firestore_global(e):
+    user = session.get("user", {})
+    error_data = {
+        "user_id": user.get("docID", "anonymous"),
+        "path": request.path,
+        "method": request.method,
+        "error": str(e),
+        "stacktrace": traceback.format_exc(),
+        "timestamp": firestore.SERVER_TIMESTAMP
+    }
+    try:
+        firestore_db.collection("errors").add(error_data)
+    except Exception as log_error:
+        print("🔥 Firestoreエラー保存に失敗:", log_error)
+    return "予期せぬエラーが発生しました", 500

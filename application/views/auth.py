@@ -5,9 +5,15 @@ from application.forms import LoginForm, SignupForm
 from application.extensions import firestore_db
 from utils import generate_id, get_user_doc_id_by_email
 import json
+import os
 
-with open('application/config/firebaseConfig.json') as f:
-    config = json.load(f)
+
+# 環境変数からFirebase設定を取得
+if os.path.exists("application/config/firebaseConfig.json"):
+    with open("application/config/firebaseConfig.json") as f:
+        config = json.load(f)
+else:
+    config = json.loads(os.environ["FIREBASE_CONFIG_JSON"])
 
 firebase = pyrebase.initialize_app(config)
 firebase_auth = firebase.auth()

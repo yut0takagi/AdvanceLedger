@@ -1,11 +1,7 @@
+# application/config/config.py
+
 import os
-from pathlib import Path
-
-DEBUG = True
-
-# シークレットキーの設定
-SECRET_KEY = os.urandom(24).hex()
-
 
 class Config:
-    SECRET_KEY = SECRET_KEY
+    SECRET_KEY = os.environ.get("SECRET_KEY")
+    DEBUG = os.environ.get("FLASK_DEBUG", "False") == "True"
