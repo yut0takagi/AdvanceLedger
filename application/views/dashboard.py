@@ -93,11 +93,25 @@ def settle_with_friend(user_id, friend_id):
     for doc in docs:
         data = doc.to_dict()
         if data.get("groupID") in [None, "__direct__"]:
-            # 双方向に対象が含まれる場合は削除
             if (data.get("from_") == user_id and data.get("to_") == friend_id) or \
                (data.get("from_") == friend_id and data.get("to_") == user_id):
                 doc.reference.delete()
                 deleted_count += 1
+
+    # ✅ 相手に通知を追加
+    notifications_ref = firestore_db.collection("notifications")
+    user_doc = firestore_db.collection("users").document(user_id).get()
+    from_username = user_doc.to_dict().get("username", "誰か")
+
+    notification = {
+        "user_id": friend_id,
+        "type": "settled",
+        "from_user_id": user_id,
+        "message": f"{from_username} さんがあなたとのやり取りを精算しました 💸",
+        "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "is_read": False
+    }
+    notifications_ref.add(notification)
 
     flash(f"{deleted_count} 件のやり取りを精算済みにしました", "success")
     return redirect(url_for('dashboard.dashboard', user_id=user_id))

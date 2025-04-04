@@ -6,33 +6,70 @@
   <title>ペイとも - ホーム</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}">
+  <!-- トースト用フェードアニメーション -->
+  <style>
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .animate-fadeIn {
+      animation: fadeIn 0.4s ease-out;
+    }
+  </style>
 </head>
 <body class="bg-blue-50 text-gray-800 font-sans">
 
-  <!-- ヘッダー -->
   <header class="fixed w-full top-0 left-0 right-0 bg-blue-600 text-white shadow-md z-50">
     <div class="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
+      <!-- ロゴ -->
       <a href="{{ url_for('home.home') }}" class="text-2xl font-bold tracking-tight hover:text-blue-200 transition">
         ペイとも
       </a>
-      <nav class="space-x-4 text-sm">
+
+      <!-- PC用メニュー -->
+      <nav class="hidden md:flex items-center space-x-4 text-sm">
         {% if session.get('user') %}
-        <a href="{{ url_for('dashboard.dashboard', user_id=session['user']['docID']) }}" class="hover:underline">ダッシュボード</a>
-        <a href="{{ url_for('group.create_group') }}" class="hover:underline">グループ作成</a>
-        <a href="{{ url_for('friend.search_friend_page') }}" class="hover:underline">友達検索</a>
-        <a href="{{ url_for('auth.logout') }}" class="hover:underline">ログアウト</a>
+          <a href="{{ url_for('dashboard.dashboard', user_id=session['user']['docID']) }}" class="hover:underline">ダッシュボード</a>
+          <a href="{{ url_for('group.create_group') }}" class="hover:underline">グループ作成</a>
+          <a href="{{ url_for('friend.search_friend_page') }}" class="hover:underline">友達検索</a>
+          <a href="{{ url_for('notification.view') }}" class="hover:underline">通知</a>
+          <a href="{{ url_for('auth.logout') }}" class="hover:underline">ログアウト</a>
         {% else %}
           <a href="{{ url_for('auth.login') }}" class="hover:underline">ログイン</a>
         {% endif %}
       </nav>
+
+      <!-- モバイル用 メニューアイコン -->
+      <button id="menuToggle" class="md:hidden flex items-center gap-2 bg-white/20 hover:bg-white/30 px-4 py-2 rounded text-sm transition">
+        <svg class="w-5 h-5 fill-white" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M4 6h16v2H4V6zm0 6h16v2H4v-2zm0 6h16v2H4v-2z"></path>
+        </svg>
+        <span class="text-white">メニュー</span>
+      </button>
+    </div>
+
+    <!-- モバイルメニュー本体 -->
+    <div id="mobileMenu" class="overflow-hidden max-h-0 transition-all duration-300 ease-in-out md:hidden px-4 space-y-2 text-sm bg-blue-600">
+      {% if session.get('user') %}
+        <a href="{{ url_for('dashboard.dashboard', user_id=session['user']['docID']) }}" class="block py-2 hover:underline">ダッシュボード</a>
+        <a href="{{ url_for('group.create_group') }}" class="block py-2 hover:underline">グループ作成</a>
+        <a href="{{ url_for('friend.search_friend_page') }}" class="block py-2 hover:underline">友達検索</a>
+        <a href="{{ url_for('notification.view') }}" class="block py-2 hover:underline">通知</a>
+        <a href="{{ url_for('auth.logout') }}" class="block py-2 hover:underline">ログアウト</a>
+      {% else %}
+        <a href="{{ url_for('auth.login') }}" class="block py-2 hover:underline">ログイン</a>
+      {% endif %}
     </div>
   </header>
-
   <!-- スペース確保 -->
   <div class="h-20"></div>
 
-  <!-- メイン + フッター -->
-  <main class="flex-grow max-w-5xl mx-auto px-4 py-10 w-full text-center">
+  <!-- トースト通知 -->
+  <div id="toast-container" class="fixed top-5 right-5 z-50 space-y-2"></div>
+
+  <!-- メイン -->
+  <main class="flex-grow max-w-5xl mx-auto px-4 py-10 w-full">
     {% block content %}
     {% endblock %}
   </main>
@@ -42,5 +79,47 @@
     &copy; 2025 ペイとも - 立て替え管理アプリ
   </footer>
 
+
+  <!-- JS トグル（アニメーション対応） -->
+  <script>
+    const toggleBtn = document.getElementById('menuToggle');
+    const menu = document.getElementById('mobileMenu');
+
+    toggleBtn.addEventListener('click', () => {
+      if (menu.classList.contains('max-h-0')) {
+        menu.classList.remove('max-h-0');
+        menu.classList.add('max-h-96');  // メニューの高さに応じて調整
+      } else {
+        menu.classList.remove('max-h-96');
+        menu.classList.add('max-h-0');
+      }
+    });
+  </script>
+  <!-- Flask flash メッセージ処理 -->
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const messages = JSON.parse('{{ get_flashed_messages(with_categories=true) | tojson | safe }}');
+      const container = document.getElementById("toast-container");
+
+      messages.forEach(([category, message]) => {
+        const toast = document.createElement("div");
+        toast.className = `px-4 py-3 rounded shadow-md text-white animate-fadeIn transition duration-300 ${
+          category === "success" ? "bg-green-500" :
+          category === "error" ? "bg-red-500" :
+          category === "info" ? "bg-blue-500" :
+          "bg-gray-600"
+        }`;
+
+        toast.innerHTML = `<span class="block">${message}</span>`;
+        container.appendChild(toast);
+
+        // 自動で3秒後に消える
+        setTimeout(() => {
+          toast.classList.add("opacity-0");
+          setTimeout(() => toast.remove(), 500);
+        }, 3000);
+      });
+    });
+  </script>
 </body>
 </html>
