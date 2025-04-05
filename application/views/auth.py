@@ -99,7 +99,7 @@ def signup():
             #TODO: Error画面の作成
             error_message = str(e)
             print(f"ユーザー登録に失敗しました: {error_message}")
-            return 'ユーザー登録に失敗しました'
+            return redirect(url_for('auth.signup'))
     """utils.make_dictを参照"""
     return render_template('signup.html', form=form)
 

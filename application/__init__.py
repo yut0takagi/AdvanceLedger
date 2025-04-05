@@ -15,7 +15,7 @@ csrf = CSRFProtect()
 
 def create_app():
     app = Flask(__name__, instance_relative_config=True)
-    app.config.from_object('application.config.config')
+    app.config.from_object('application.config.config.Config')
     csrf.init_app(app)
     
     app.register_blueprint(auth_bp, url_prefix='/auth')
